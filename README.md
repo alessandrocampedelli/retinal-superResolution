@@ -1,70 +1,253 @@
-# Computational Imaging - Final Project (Group G)
+# Computational Imaging — Final Project (Group G)
 
-This repository contains the final project for the **Computational Imaging** course. 
+> **Super-Resolution on Medical Retinal Images**  
+> Three approaches compared: Variational (FISTA), Deep Learning (U-Net), Generative (DiffPIR)
+
+---
+
+## ⚠️ Important: Google Colab Only
+
+This project is designed to run **exclusively on [Google Colab](https://colab.research.google.com/)** with a GPU runtime enabled.  
+Local execution is not officially supported. All notebooks mount Google Drive for persistent storage of datasets, weights, and outputs.
+
+---
 
 ## Project Overview
 
-The objective of this project is to solve a **Super-Resolution (SR)** inverse problem on a dataset of high-resolution medical retinal images (*Egyptian Medical Retinal Images*). The images are resized to $256 \times 256$, and the task is to recover the high-quality images from degraded observations.
+The goal of this project is to solve a **Super-Resolution (SR)** inverse problem on the *Egyptian Medical Retinal Images* dataset. Images are resized to 256×256 pixels, and the task is to recover high-resolution images from degraded low-resolution observations.
 
-The forward degradation model includes:
-- Spatial downscaling (factors $s=2$ and $s=4$) using average pooling.
-- Additive Gaussian noise ($\sigma=0.005$ and $\sigma=0.01$).
+**Forward degradation model:**
+- Spatial downscaling via average pooling with factors **s ∈ {2, 4}**
+- Additive Gaussian noise with levels **σ ∈ {0.005, 0.01}**
 
-### Evaluated Methods
-We compare three distinct families of methods to solve the inverse problem:
-1. **Variational Method:** Fast Iterative Shrinkage-Thresholding Algorithm (FISTA) with L1 Wavelet regularization.
-2. **End-to-End Deep Learning:** U-Net architecture.
-3. **Generative Prior:** Diffusion-based Plug-and-Play Image Restoration (DiffPIR).
+This yields 4 degradation scenarios, from easy (s=2, σ=0.005) to hard (s=4, σ=0.01).
+
+**Methods evaluated:**
+| # | Method | Type |
+|---|--------|------|
+| 1 | FISTA + Wavelet L₁ regularization | Variational |
+| 2 | Residual U-Net & Hybrid Attention U-Net | End-to-End Deep Learning |
+| 3 | DiffPIR (Diffusion Plug-and-Play) | Generative Prior |
 
 ---
 
 ## Repository Structure
 
-To ensure a clean, reproducible, and cloud-friendly workspace, the repository is structured as follows:
+```
+CI_Project/                         ← this GitHub repository
+│
+├── notebooks/
+│   ├── 01_Dataset_and_Forward_Model.ipynb   # Dataset download, preprocessing, forward model
+│   ├── 02_Variational_FISTA_Wavelets.ipynb  # FISTA solver with Wavelet L₁ regularization
+│   ├── 03_DeepLearning_UNet.ipynb           # U-Net training and evaluation (8 models)
+│   ├── 04_Generative_DiffPIR.ipynb          # DDPM training + DiffPIR inference
+│   └── 05_Results_and_Comparison.ipynb      # Metrics aggregation and final comparison
+│
+├── outputs/                        # Lightweight figures committed to GitHub
+│   ├── comparison/                 # Final comparison plots (NB05)
+│   ├── diffpir/                    # DiffPIR-specific plots
+│   ├── fista/                      # FISTA-specific plots
+│   └── unet/                       # U-Net training curves and qualitative results
+│
+└── README.md
+```
 
-```
-CI_Project/
-│
-├── notebooks/                              # Jupyter Notebooks for execution
-│   ├── 01_Dataset_and_Forward_Model.ipynb  # Dataset preprocessing and pipeline setup
-│   ├── 02_Variational_FISTA_Wavelets.ipynb # FISTA solver implementation & sweep
-│   ├── 03_EndToEnd_UNet.ipynb              # U-Net training and evaluation
-│   ├── 04_Generative_DiffPIR.ipynb         # DiffPIR execution
-│   └── 05_Results_and_Comparison.ipynb     # Metric evaluation and visual comparisons
-│
-├── outputs/                                # Lightweight output folder
-│   ├── comparison/                         # Comparison plots
-│   ├── diffpir/                            # DiffPIR specific plots
-│   ├── fista/                              # FISTA specific plots
-│   └── unet/                               # U-Net specific plots
-│
-└── README.md                               # Project documentation
-```
+> **Note:** The dataset, model weights, and intermediate tensor files are **not tracked in this repository**. They are stored on Google Drive (see the section below).
 
 ---
 
-## How to Use This Project
+## Google Drive Folder Structure
 
-This project is explicitly designed to be run in a cloud environment (**Google Colab** or **Kaggle**) with GPU acceleration.
+Before running any notebook, your Google Drive must contain a folder with the following structure.  
+The notebooks will create most subfolders automatically, but the **root folder name must match** the `BASE_DRIVE_FOLDER` variable (default: `CI_Project`).
 
-### 1. Library Dependencies (IPPy)
-The underlying algorithmic logic (operators, neural network blocks, metrics) relies on the `IPPy` library. 
-To keep this repository clean, **`IPPy` is not included here**. Instead, every notebook dynamically clones the custom `IPPy` fork at runtime:
-```bash
+```
+MyDrive/
+└── CI_Project/                     ← BASE_DRIVE_FOLDER (configurable)
+    │
+    ├── dataset/                    ← created automatically by NB01
+    │   ├── train/                  # ~3329 preprocessed .pt tensors
+    │   ├── val/                    # ~416 preprocessed .pt tensors
+    │   └── test/                   # ~417 preprocessed .pt tensors
+    │
+    ├── weights/                    ← created automatically, populated by NB03 and NB04
+    │   ├── resunet_s2_sig0005.pth
+    │   ├── resunet_s2_sig001.pth
+    │   ├── resunet_s4_sig0005.pth
+    │   ├── resunet_s4_sig001.pth
+    │   ├── attnunet_s2_sig0005.pth
+    │   ├── attnunet_s2_sig001.pth
+    │   ├── attnunet_s4_sig0005.pth
+    │   ├── attnunet_s4_sig001.pth
+    │   └── DDPMDenoiser_retinal.pth
+    │
+    └── outputs/                    ← created automatically by each notebook
+        ├── fista/                  # FISTA results (CSV + plots)
+        ├── unet/                   # U-Net results (CSV + training curves)
+        ├── diffpir/                # DiffPIR results (CSV + training loss)
+        └── comparison/             # Final comparison figures (NB05)
+```
+
+> **Tip:** You only need to create the root folder `CI_Project` manually on Google Drive. All subfolders are created automatically when you run the notebooks.
+
+---
+
+## Step-by-Step Execution Guide
+
+### Prerequisites
+
+1. A Google account with Google Drive.
+2. Access to [Google Colab](https://colab.research.google.com/) with a **GPU runtime** (`Runtime → Change runtime type → T4 GPU`).
+3. A Kaggle account (required only for NB01 to download the dataset).
+
+---
+
+### Step 1 — Clone this repository on Colab
+
+At the start of any session, clone the repository to access the notebooks:
+
+```python
+!git clone https://github.com/alessandrocampedelli/CI_Project.git
+%cd CI_Project
+```
+
+Alternatively, open the notebooks directly from GitHub via the Colab interface (`File → Open notebook → GitHub`).
+
+---
+
+### Step 2 — Run the notebooks in order
+
+> **Important:** Notebooks must be run **sequentially** (01 → 02 → 03 → 04 → 05).  
+> Notebooks 02, 03, and 04 are independent of each other once NB01 is complete, and can be run in any order among themselves.  
+> Notebook 05 must always be the last to run.
+
+---
+
+#### 📓 Notebook 01 — Dataset and Forward Model
+**Purpose:** Downloads the dataset from Kaggle, applies preprocessing, and saves tensors to Google Drive.
+
+**Before running:**
+- Configure your Kaggle API credentials in the notebook (the cell will guide you).
+- Set `BASE_DRIVE_FOLDER = 'CI_Project'` (or your custom folder name — must match in all other notebooks).
+
+**What it does:**
+- Downloads *Egyptian Medical Retinal Images* from Kaggle via `kagglehub`.
+- Converts images to grayscale, resizes to 256×256.
+- Splits into train/val/test (80/10/10, seed=42).
+- Saves preprocessed tensors as `.pt` files to `MyDrive/CI_Project/dataset/`.
+
+**Expected output:** ~4162 `.pt` files saved on Google Drive (≈ 873 MB).  
+**⏱ Estimated time:** 10–20 minutes.
+
+---
+
+#### 📓 Notebook 02 — FISTA + Wavelet L₁
+**Purpose:** Solves the SR inverse problem using the variational FISTA algorithm with Wavelet L₁ regularization.
+
+**Key configurable parameters:**
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LAMBDA` | `0.001` | Wavelet L₁ regularization strength |
+| `MAX_ITER` | `200` | Maximum FISTA iterations |
+| `NUM_TEST_IMGS` | `10` | Number of test images to evaluate |
+
+**What it does:**
+- Dynamically clones the `IPPy` library at runtime.
+- Runs FISTA on all 4 degradation scenarios.
+- Saves per-image PSNR/SSIM results to `outputs/fista/fista_metrics.csv`.
+- Saves qualitative figures and convergence plots.
+
+**No training required** — FISTA is a purely mathematical method.  
+
+---
+
+#### 📓 Notebook 03 — Deep Learning U-Net
+**Purpose:** Trains and evaluates two U-Net architectures (Residual U-Net and Hybrid Attention U-Net) across all 4 degradation scenarios — 8 models in total.
+
+**Key configurable parameters:**
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MIDDLE_CH` | `[32, 64, 128, 256]` | Channel progression per encoder level |
+| `N_LAYERS` | `2` | Conv layers per block |
+| Epochs (in training loop) | `20` | Max training epochs per model |
+| Learning rate | `5e-4` | Adam optimizer LR |
+
+**What it does:**
+- Trains all 8 models with early stopping, cosine annealing, and gradient clipping.
+- Saves model weights to `MyDrive/CI_Project/weights/` (one `.pth` file per model).
+- If a weight file already exists on Drive, training for that model is automatically skipped (resume-safe).
+- Saves per-image PSNR/SSIM results to `outputs/unet/unet_metrics.csv`.
+
+---
+
+#### 📓 Notebook 04 — Generative DiffPIR
+**Purpose:** Trains a DDPM denoiser on clean HR retinal images, then uses it as a Plug-and-Play prior within the DiffPIR inference algorithm (HQS + DDIM).
+
+**Key configurable parameters:**
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BASE_CH` | `32` | Base channels of the diffusion U-Net |
+| `T_DIFFUSION` | `1000` | Total diffusion timesteps |
+| `N_TRAIN_EPOCHS` | `100` | Training epochs for the DDPM |
+| `BATCH_SIZE` | `16` | Training batch size |
+| `LR_DIFFUSION` | `2e-4` | AdamW learning rate |
+| `EMA_DECAY` | `0.9999` | EMA weight decay |
+| `CKPT_EVERY` | `5` | Save checkpoint every N epochs |
+| `DDIM_STEPS` | `100` | Number of DDIM inference steps |
+| `RHO_SCALE` | `1.0` | HQS data fidelity strength scaling |
+| `NUM_TEST_IMAGES` | `20` | Test images per scenario |
+
+**What it does:**
+- Trains a `DiffusionUNet` (~6M parameters) on clean HR images in [-1, 1] space.
+- Training is automatically **resumed** from the last checkpoint if `DDPMDenoiser_retinal.pth` exists on Drive and the saved epoch is less than `N_TRAIN_EPOCHS`. Training is skipped entirely if already complete.
+- Runs DiffPIR inference (HQS + DDIM) on all 4 degradation scenarios.
+- Saves results to `outputs/diffpir/diffpir_metrics.csv`.
+
+
+> **Note on DiffPIR results:** 100 training epochs on ~3300 images represent a minimal proof-of-concept. The DiffPIR framework is theoretically correct, but the generative prior requires significantly more training (as in the original paper) to achieve competitive PSNR/SSIM.
+
+---
+
+#### 📓 Notebook 05 — Results and Comparison
+**Purpose:** Aggregates the CSV results from NB02, NB03, and NB04, and produces all final comparison figures.
+
+**What it does:**
+- Loads metrics from all three methods.
+- Generates: bar charts, degradation line plots, PSNR boxplots, PSNR vs. SSIM scatter plots, qualitative comparison grids (4×5), and zoom crops around the optic disc.
+- Saves all figures to `outputs/comparison/` on Drive.
+
+**Must be run after NB02, NB03, and NB04.**  
+
+---
+
+## Notes on the IPPy Library
+
+All algorithmic logic (operators, proximal solvers, neural network blocks, metrics) is implemented in the custom **`IPPy`** library, maintained in a separate repository:
+
+👉 [github.com/alessandrocampedelli/IPPy](https://github.com/alessandrocampedelli/IPPy)
+
+Every notebook dynamically clones `IPPy` at runtime with:
+```python
 !git clone https://github.com/alessandrocampedelli/IPPy.git
 ```
 
-### 2. Dataset and Weights (Google Drive)
-The retinal dataset (~4000 images) and the trained model weights are **not** tracked in this GitHub repository to avoid bloating. 
-Instead, they are stored permanently on **Google Drive**.
+No manual installation is required.
 
-**Workflow:**
-1. Open `01_Dataset_and_Forward_Model.ipynb` in Google Colab.
-2. Execute the cells to mount your Google Drive. 
-3. The notebook will automatically download the dataset, preprocess it (resize, tensor conversion, train/val/test splits), and save the tensors directly to your Drive.
-4. For all subsequent notebooks (`02` to `05`), simply mount your Google Drive. The tensors will be loaded instantaneously without the need for redundant preprocessing.
+---
 
-### 3. Execution Order
-To reproduce the experiments, execute the notebooks sequentially from `01` to `05`. 
-- **Notebooks 02, 03, and 04** are independent of each other (once the dataset is processed in Notebook 01) and can be executed in any order.
-- **Notebook 05** must be executed last, as it gathers the reconstruction results saved by the previous notebooks to compute PSNR and SSIM metrics.
+## Results Summary
+
+| Method | Best PSNR | Best SSIM | Notes |
+|--------|-----------|-----------|-------|
+| FISTA + Wavelet L₁ | 37.46 dB | 0.9707 | No training, convergence guaranteed |
+| Hybrid Attention U-Net | **42.83 dB** | **0.9774** | Best quantitative performance |
+| DiffPIR (100 epochs) | 15.46 dB | 0.2804 | Proof-of-concept; prior under-trained |
+
+---
+
+## Authors
+
+- **Matteo Boscherini**
+- **Alessandro Campedelli**
+
+Computational Imaging — Group G — A.Y. 2025/2026
