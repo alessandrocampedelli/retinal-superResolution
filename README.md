@@ -1,4 +1,6 @@
-# Computational Imaging — Final Project (Group G)
+# Retinal Image Super-Resolution
+
+Computational Imaging final project (Group G), University of Bologna, academic year 2025/2026.
 
 > **Super-Resolution on Medical Retinal Images**  
 > Three approaches compared: Variational (FISTA), Deep Learning (U-Net), Generative (DiffPIR)
@@ -34,7 +36,7 @@ This yields 4 degradation scenarios, from easy (s=2, σ=0.005) to hard (s=4, σ=
 ## Repository Structure
 
 ```
-CI_Project/                         ← this GitHub repository
+retinal-superResolution/            ← this GitHub repository
 │
 ├── notebooks/
 │   ├── 01_Dataset_and_Forward_Model.ipynb   # Dataset download, preprocessing, forward model
@@ -107,8 +109,8 @@ MyDrive/
 At the start of any session, clone the repository to access the notebooks:
 
 ```python
-!git clone https://github.com/alessandrocampedelli/CI_Project.git
-%cd CI_Project
+!git clone https://github.com/MatteMito/retinal-superResolution.git
+%cd retinal-superResolution
 ```
 
 Alternatively, open the notebooks directly from GitHub via the Colab interface (`File → Open notebook → GitHub`).
@@ -249,5 +251,3 @@ No manual installation is required.
 
 - **Matteo Boscherini**
 - **Alessandro Campedelli**
-
-Computational Imaging — Group G — A.Y. 2025/2026
